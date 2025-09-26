@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="text-center mt-5">
+    <h1>Freelancer CRM</h1>
+    <p>Управляй клиентами, проектами и счетами легко.</p>
+    <form method="get" class="mb-4">
+    <div class="input-group">
+        <input type="text" name="q" class="form-control" placeholder="Поиск по клиентам..." value="{{ request.GET.q }}">
+        <button class="btn btn-outline-secondary" type="submit">Найти</button>
+    </div>
+</form>
+    <a href="{% url 'clients:export_csv' %}" class="btn btn-success btn-sm">Экспорт в CSV</a>
+</div>
+{% endblock %}

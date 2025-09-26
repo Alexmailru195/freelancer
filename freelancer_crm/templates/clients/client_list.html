@@ -1,0 +1,247 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2>Клиенты</h2>
+    <a href="#" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createClientModal">
+        Добавить клиента
+    </a>
+</div>
+
+<form method="get" class="mb-4">
+    <div class="input-group">
+        <input type="text" name="q" class="form-control" placeholder="Поиск..." value="{{ request.GET.q }}">
+        <button class="btn btn-outline-secondary" type="submit">Найти</button>
+    </div>
+</form>
+
+{% if clients %}
+<table class="table table-striped">
+    <thead>
+    <tr>
+        <th>Имя</th>
+        <th>Email</th>
+        <th>Телефон</th>
+        <th>Компания</th>
+        <th>Действия</th>
+    </tr>
+    </thead>
+    <tbody>
+    {% for client in clients %}
+    <tr>
+        <td>{{ client.name }}</td>
+        <td>{{ client.email }}</td>
+        <td>{{ client.phone }}</td>
+        <td>{{ client.company }}</td>
+        <td>
+            <button type="button" class="btn btn-sm btn-warning"
+                    onclick="openEditModal({{ client.pk }}, '{{ client.name }}', '{{ client.email }}', '{{ client.phone|escape }}', '{{ client.company|escape }}')">
+                Редактировать
+            </button>
+            <a href="{% url 'clients:delete' client.pk %}" class="btn btn-sm btn-danger">Удалить</a>
+        </td>
+    </tr>
+    {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p class="text-muted">Клиенты не найдены.</p>
+{% endif %}
+
+<a href="{% url 'clients:export_csv' %}" class="btn btn-success">Экспорт в CSV</a>
+
+<!-- Попап: Добавить клиента -->
+<div class="modal fade" id="createClientModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Новый клиент</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="createClientForm">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label>Имя *</label>
+                        <input type="text" name="name" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label>Email *</label>
+                        <input type="email" name="email" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label>Телефон</label>
+                        <input type="text" name="phone" class="form-control">
+                    </div>
+                    <div class="mb-3">
+                        <label>Компания</label>
+                        <input type="text" name="company" class="form-control">
+                    </div>
+                    <button type="submit" class="btn btn-primary">Сохранить</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Попап: Редактировать клиента -->
+<div class="modal fade" id="editClientModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Редактировать клиента</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editClientForm">
+                    {% csrf_token %}
+                    <input type="hidden" id="editClientId">
+                    <div class="mb-3">
+                        <label>Имя *</label>
+                        <input type="text" id="editClientName" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label>Email *</label>
+                        <input type="email" id="editClientEmail" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label>Телефон</label>
+                        <input type="text" id="editClientPhone" class="form-control">
+                    </div>
+                    <div class="mb-3">
+                        <label>Компания</label>
+                        <input type="text" id="editClientCompany" class="form-control">
+                    </div>
+                    <button type="submit" class="btn btn-primary">Сохранить</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    jQuery(document).ready(function($) {
+        // Кастомная функция serializeObject
+        if (!$.fn.serializeObject) {
+            $.fn.serializeObject = function() {
+                var obj = {};
+                $.each(this.serializeArray(), function(i, o) {
+                    obj[o.name] = o.value;
+                });
+                return obj;
+            };
+        }
+
+        // Обработчик отправки формы
+        $('#createClientForm').on('submit', function(e) {
+            e.preventDefault();
+            var formData = $(this).serializeObject();
+
+            $.ajax({
+                type: 'POST',
+                url: '{% url "clients:create" %}',
+                data: JSON.stringify(formData),
+                contentType: 'application/json',
+                success: function(response) {
+                    if (response.success) {
+                        // ✅ Успешное уведомление
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Клиент добавлен!',
+                            text: `${formData.name} успешно сохранён.`,
+                            confirmButtonText: 'Ок',
+                            confirmButtonColor: '#28a745',
+                            timer: 3000,
+                            timerProgressBar: true,
+                            showClass: {
+                                popup: 'animate__animated animate__fadeInUp'
+                            },
+                            hideClass: {
+                                popup: 'animate__animated animate__fadeOutDown'
+                            }
+                        });
+                        // Обновляем страницу через 1.5 сек
+                        setTimeout(() => location.reload(), 1500);
+                    }
+                },
+                error: function(xhr) {
+                    let title = 'Ошибка';
+                    let text = 'Не удалось добавить клиента';
+
+                    if (xhr.responseJSON && xhr.responseJSON.errors) {
+                        const errors = xhr.responseJSON.errors;
+                        text = Object.keys(errors)
+                            .map(field => `<strong>${field}:</strong> ${errors[field]}`)
+                            .join('<br>');
+                        title = 'Ошибки ввода';
+                    } else if (xhr.responseJSON && xhr.responseJSON.error) {
+                        text = xhr.responseJSON.error;
+                    }
+
+                    // ❌ Уведомление об ошибке
+                    Swal.fire({
+                        icon: 'error',
+                        title: title,
+                        html: text,
+                        confirmButtonText: 'Понятно',
+                        confirmButtonColor: '#dc3545'
+                    });
+                }
+            });
+        });
+    });
+
+    // Функция открытия попапа с данными клиента
+function openEditModal(id, name, email, phone, company) {
+    $('#editClientId').val(id);
+    $('#editClientName').val(name);
+    $('#editClientEmail').val(email);
+    $('#editClientPhone').val(phone);
+    $('#editClientCompany').val(company);
+    new bootstrap.Modal(document.getElementById('editClientModal')).show();
+}
+
+// Обработчик формы редактирования
+$('#editClientForm').on('submit', function(e) {
+    e.preventDefault();
+    const formData = {
+        name: $('#editClientName').val(),
+        email: $('#editClientEmail').val(),
+        phone: $('#editClientPhone').val(),
+        company: $('#editClientCompany').val()
+    };
+
+    const clientId = $('#editClientId').val();
+
+    $.ajax({
+        type: 'POST',
+        url: `{% url "clients:update" pk=0 %}`.replace('0', clientId),
+        data: JSON.stringify(formData),
+        contentType: 'application/json',
+        success: function(response) {
+            if (response.success) {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Изменения сохранены!',
+                    text: `Клиент "${formData.name}" обновлён.`,
+                    timer: 1500,
+                    timerProgressBar: true,
+                    showConfirmButton: false
+                });
+                setTimeout(() => location.reload(), 1500);
+            }
+        },
+        error: function(xhr) {
+            let msg = 'Ошибка сохранения';
+            if (xhr.responseJSON && xhr.responseJSON.errors) {
+                msg = Object.keys(xhr.responseJSON.errors)
+                    .map(field => `<strong>${field}:</strong> ${xhr.responseJSON.errors[field]}`)
+                    .join('<br>');
+            }
+            Swal.fire({
+                icon: 'error',
+                title: 'Ошибка',
+                html: msg
+            });
+        }
+    });
+});
+</script>
+{% endblock %}

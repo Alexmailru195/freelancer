@@ -1,0 +1,20 @@
+<!-- templates/invoices/invoice_list.html -->
+{% extends 'base.html' %}
+{% block content %}
+<h2>Счета</h2>
+<a href="#" class="btn btn-primary mb-3">Добавить счёт</a>
+<ul class="list-group">
+    {% for invoice in invoices %}
+    <li class="list-group-item d-flex justify-content-between align-items-center">
+        <div>
+            <strong>Счёт #{{ invoice.id }}</strong> — {{ invoice.project.name }}
+            <br>
+            <small>Клиент: {{ invoice.project.client.name }} | Сумма: {{ invoice.amount }} | Статус: {{ invoice.get_status_display }}</small>
+        </div>
+        <span class="badge bg-{{ invoice.status|yesno:'warning,success,secondary' }} text-white">
+            {{ invoice.get_status_display }}
+        </span>
+    </li>
+    {% endfor %}
+</ul>
+{% endblock %}
