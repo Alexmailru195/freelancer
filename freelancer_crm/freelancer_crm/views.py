@@ -7,6 +7,11 @@ from datetime import date
 
 @login_required
 def dashboard(request):
+    overdue_invoices = Invoice.objects.filter(
+        user=request.user,
+        due_date__lt=date.today(),
+        status='Pending'
+    ).count()
     user = request.user
     clients_count = Client.objects.filter(user=user).count()
     projects_count = Project.objects.filter(user=user).count()

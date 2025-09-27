@@ -11,6 +11,7 @@ from .models import Project
 from .forms import ProjectForm
 from clients.models import Client
 
+
 @login_required
 def project_list(request):
     query = request.GET.get('q')
@@ -25,6 +26,7 @@ def project_list(request):
         'projects': projects,
         'clients': clients
     })
+
 
 @csrf_exempt
 @login_required
@@ -64,6 +66,7 @@ def project_create(request):
             return JsonResponse({'success': False, 'error': str(e)}, status=500)
     return JsonResponse({'error': 'Method not allowed'}, status=405)
 
+
 @csrf_exempt
 @login_required
 def project_update(request, pk):
@@ -81,6 +84,7 @@ def project_update(request, pk):
         except Exception as e:
             return JsonResponse({'success': False, 'error': str(e)}, status=500)
     return JsonResponse({'error': 'Method not allowed'}, status=405)
+
 
 @csrf_exempt
 @login_required

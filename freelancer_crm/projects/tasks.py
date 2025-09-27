@@ -8,51 +8,28 @@ from datetime import date
 @shared_task
 def send_daily_project_updates():
     today = date.today()
-    sent_count = 0
+    sent = 0
 
     # Проекты, которые начинаются сегодня
-    starting_projects = Project.objects.filter(start_date=today)
-    for project in starting_projects:
+    for project in Project.objects.filter(start_date=today):
         send_mail(
-            subject=f"🚀 Начало проекта '{project.name}'",
-            message=f"""
-Здравствуйте, {project.client.name}!
-
-Рады сообщить, что сегодня начинается проект **{project.name}**.
-Мы уже приступили к работе и будем держать вас в курсе.
-
-Дата начала: {project.start_date}
-Дата окончания: {project.end_date or 'Не указана'}
-
-С уважением,
-Команда {settings.SITE_NAME or 'Freelancer CRM'}
-            """,
+            subject=f"🚀 Начало проекта: {project.name}",
+            message=f"Здравствуйте, {project.client.name}!\n\nВаш проект '{project.name}' начинается сегодня.\n\nС уважением, команда Freelancer CRM",
             from_email=settings.DEFAULT_FROM_EMAIL,
             recipient_list=[project.client.email],
             fail_silently=False,
         )
-        sent_count += 1
+        sent += 1
 
     # Проекты, которые заканчиваются сегодня
-    ending_projects = Project.objects.filter(end_date=today)
-    for project in ending_projects:
+    for project in Project.objects.filter(end_date=today):
         send_mail(
-            subject=f"✅ Завершение проекта '{project.name}'",
-            message=f"""
-Здравствуйте, {project.client.name}!
-
-Хорошие новости — проект **{project.name}** успешно завершён!
-Благодарим за сотрудничество.
-
-Если потребуется поддержка или доработки — мы всегда на связи.
-
-С уважением,
-Команда {settings.SITE_NAME or 'Freelancer CRM'}
-            """,
+            subject=f"✅ Завершение проекта: {project.name}",
+            message=f"Здравствуйте, {project.client.name}!\n\nПроект '{project.name}' успешно завершён.\n\nСпасибо за сотрудничество!",
             from_email=settings.DEFAULT_FROM_EMAIL,
             recipient_list=[project.client.email],
             fail_silently=False,
         )
-        sent_count += 1
+        sent += 1
 
-    return f"Отправлено {sent_count} писем."
+    return f"Отправлено {sent} писем."

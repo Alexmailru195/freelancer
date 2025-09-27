@@ -91,11 +91,9 @@ EMAIL_HOST_USER = 'mailru195@yandex.ru'
 EMAIL_HOST_PASSWORD = 'lbmbywboxucntimh'
 DEFAULT_FROM_EMAIL = 'mailru195@yandex.ru'
 
-# Используем Redis как брокер
+# Celery
 CELERY_BROKER_URL = 'redis://127.0.0.1:6379/0'
 CELERY_RESULT_BACKEND = 'redis://127.0.0.1:6379/0'
-
-# Автоматическое обнаружение задач
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
